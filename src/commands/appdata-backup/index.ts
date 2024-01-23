@@ -91,7 +91,7 @@ Shutting down containers, please wait...
 
     await this.ssh.connect({
       ...SSH_CONFIG,
-      privateKey: flags.privateKeyPath,
+      privateKeyPath: flags.privateKeyPath,
     })
 
     const containers = await this.getContainers()
@@ -99,6 +99,8 @@ Shutting down containers, please wait...
     for (const container of containers) {
       await this.backupContainer(container) // eslint-disable-line no-await-in-loop
     }
+
+    await this.backupPlex()
 
     this.exit()
   }
