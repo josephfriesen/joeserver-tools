@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "declaration": true,
+    "lib": ["es5", "es6", "dom", "dom.iterable"],
     "module": "Node16",
     "outDir": "dist",
     "rootDir": "src",
