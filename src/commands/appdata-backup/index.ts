@@ -29,7 +29,7 @@ Shutting down containers, please wait...
   ssh: NodeSSH = new NodeSSH()
 
   get date(): string {
-    return new Date().toLocaleDateString()
+    return new Date().toLocaleString()
   }
 
   async backupContainer(container: string): Promise<void> {
@@ -82,10 +82,10 @@ Shutting down containers, please wait...
   }
 
   async run(): Promise<void> {
-    this.log('========================================\n')
+    this.log(' ========================================\n')
     this.log(`   ${chalk.bold(chalk.blue('Backing up joeserver appdata'))}`)
-    this.log(`   ${chalk.bold('Date: ')} ${this.date}`)
-    this.log('========================================\n')
+    this.log(`   ${chalk.bold('Date: ')} ${this.date}\n`)
+    this.log(' ========================================\n')
 
     const {flags} = await this.parse(AppdataBackup)
 
