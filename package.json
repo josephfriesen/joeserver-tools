@@ -1,7 +1,9 @@
 {
   "author": "Joe Friesen @josephfriesen",
   "bin": {
-    "joeserver-tools": "./bin/run.js"
+    "joeserver-tools": "./bin/run.js",
+    "js": "./bin/run.js",
+    "js-dev": "./bin/dev.js"
   },
   "bugs": "https://github.com/josephfriesen/joeserver-tools/issues",
   "dependencies": {
@@ -15,7 +17,7 @@
     "@oclif/test": "^3",
     "@types/chai": "^4",
     "@types/mocha": "^10",
-    "@types/node": "^18",
+    "@types/node": "^18.19.24",
     "@types/ssh2": "^1.11.19",
     "@types/ssh2-streams": "^0.1.12",
     "chai": "^4",
