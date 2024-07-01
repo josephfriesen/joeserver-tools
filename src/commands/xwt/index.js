@@ -135,7 +135,7 @@ class XWT extends Command {
   constructor(argv, config) {
     super(argv, config);
     this.log('constructor');
-    _config({path: './xwt.env'});
+    _config();
   }
 }
 
