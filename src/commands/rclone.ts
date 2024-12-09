@@ -3,9 +3,11 @@ import chalk from 'chalk'
 
 import {BaseCommand} from '../baseCommand.js'
 
-# TODO: work in progress. Idea is to use rclone to use rclone to copy backups created elsewhere
-# to backblaze b2 bucket.
-# Note: server shares are now mounted in ubuntu vm, no need to SSH into the server to do this.
+/*
+ * TODO: work in progress. Idea is to use rclone to use rclone to copy backups created elsewhere
+ * to backblaze b2 bucket.
+ * Note: server shares are now mounted in ubuntu vm, no need to SSH into the server to do this.
+ */
 
 export default class Rclone extends BaseCommand<typeof Rclone> {
   static args = {}
