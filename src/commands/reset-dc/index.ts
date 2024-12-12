@@ -139,7 +139,7 @@ export default class ResetDC extends Command {
     })
   }
 
-  async resetStack(stackId: number, stackName: string): Promise<any> {
+  async resetStack(stackId: number, stackName: string): Promise<null> {
     const {flags} = await this.parse(ResetDC)
     const repull: boolean = flags.repull
 
@@ -198,6 +198,8 @@ export default class ResetDC extends Command {
     this.log(`     ${chalk.bold(chalk.green('Done: '))} ${chalk.green(stackName)}`)
 
     printSeparator()
+
+    return null
   }
 
   async run(): Promise<void> {
