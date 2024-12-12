@@ -29,12 +29,21 @@ export default class ResetDC extends Command {
       char: 'k',
       default: SSH_CONFIG.privateKeyPath,
       description: 'Path to private SSH key for authentiating as root user on joeserver. Defaults to ~/.ssh/id_ed25519',
+      required: false,
     }),
     repull: Flags.boolean({
       char: 'p',
       aliases: ['pull'],
       default: false,
       description: 'Repull images before restarting containers',
+      required: false,
+    }),
+    singleStack: Flags.string({
+      char: 's',
+      aliases: ['stack'],
+      default: '',
+      description: 'Only reset a specific stack',
+      required: false,
     }),
   }
 
@@ -130,90 +139,109 @@ export default class ResetDC extends Command {
     })
   }
 
-  async run(): Promise<void> {
-    if (this.PORTAINER_URL === '' || this.PORTAINER_ACCESS_TOKEN === undefined) {
-      this.error('PORTAINER_URL and PORTAINER_ACCESS_TOKEN must be set in .env')
-    }
-
-    this.log(`
-=====================
-|
-| ${chalk.bold('Resetting all docker compose stacks in joeserver Portainer')}
-| ${this.date()}
-|
-=====================\n`)
-
+  async resetStack(stackId: number, stackName: string): Promise<any> {
     const {flags} = await this.parse(ResetDC)
-    const {privateKeyPath, repull} = flags
-
-    if (privateKeyPath && repull) {
-      await this.ssh.connect({
-        ...SSH_CONFIG,
-        privateKeyPath,
-      })
-    } else {
-      this.error('Both --privateKeyPath and --repull are required')
-    }
-
-    const [url, options] = this.basePortainerRequest('stacks', 'GET')
-    const stacks = await fetch(url, options).then((res) => res.json())
+    const repull: boolean = flags.repull
 
     const showError = (id: string): void => {
       this.log(`     ${chalk.bold(chalk.red('Error: '))} ${chalk.red(this.getError(id))}`)
     }
 
     const printSeparator = (): void => {
-      this.log(`=============================\n`)
+      this.log(`\n=============================\n`)
     }
 
-    for (const {Id, Name} of stacks) {
+    printSeparator()
+
+    const id = stackId.toString()
+    this.log(`  ${chalk.bold(chalk.blue(stackName))}, ID: ${chalk.bold(id)}, ${this.date()}`)
+
+    const stack = await this.getStack(id)
+
+    if (this.hasError(id)) {
+      showError(id)
       printSeparator()
+      return null
+    }
 
-      const id: string = Id.toString()
-      this.log(`  ${chalk.bold(chalk.blue(Name))}, ID: ${chalk.bold(id)}, ${this.date()}`)
+    await this.stopStack(stack)
 
-      const stack = await this.getStack(id)
+    if (this.hasError(id)) {
+      showError(id)
+      if (this.getError(id)?.includes('is already inactive')) {
+        this.clearError(id)
+      } else {
+        // continue to next stack unless stack is already inactive (docker compose is already stopped, we still want to start it)
+        printSeparator()
+        return null
+      }
+    }
+
+    if (repull) {
+      await this.pullLatest(stack)
 
       if (this.hasError(id)) {
         showError(id)
         printSeparator()
-        continue
+        return null
       }
+    }
 
-      await this.stopStack(stack)
+    await this.startStack(stack)
 
-      if (this.hasError(id)) {
-        showError(id)
-        if (this.getError(id)?.includes('is already inactive')) {
-          this.clearError(id)
-        } else {
-          // continue to next stack unless stack is already inactive (docker compose is already stopped, we still want to start it)
-          printSeparator()
-          continue
-        }
-      }
-
-      if (repull) {
-        await this.pullLatest(stack)
-
-        if (this.hasError(id)) {
-          showError(id)
-          printSeparator()
-          continue
-        }
-      }
-
-      await this.startStack(stack)
-
-      if (this.hasError(id)) {
-        showError(id)
-        printSeparator()
-        continue
-      }
-
-      this.log(`     ${chalk.bold(chalk.green('Done: '))} ${chalk.green(Name)}`)
-
+    if (this.hasError(id)) {
+      showError(id)
       printSeparator()
+      return null
+    }
+
+    this.log(`     ${chalk.bold(chalk.green('Done: '))} ${chalk.green(stackName)}`)
+
+    printSeparator()
+  }
+
+  async run(): Promise<void> {
+    if (this.PORTAINER_URL === '' || this.PORTAINER_ACCESS_TOKEN === undefined) {
+      this.error('PORTAINER_URL and PORTAINER_ACCESS_TOKEN must be set in .env')
+    }
+    const {flags} = await this.parse(ResetDC)
+    const {privateKeyPath, repull, singleStack} = flags
+
+    const entryMessage = singleStack
+      ? `Resetting docker compose stack ${singleStack} in joeserver Portainer`
+      : 'Resetting all docker compose stacks in joeserver Portainer'
+    this.log(`
+=====================
+|
+| ${chalk.bold(entryMessage)}
+| ${this.date()}
+|
+=====================\n`)
+
+    if (privateKeyPath && repull) {
+      await this.ssh.connect({
+        ...SSH_CONFIG,
+        privateKeyPath,
+      })
+    } else if (repull && !privateKeyPath) {
+      this.error('--repull requires --privateKeyPath')
+    }
+
+    const [url, options] = this.basePortainerRequest('stacks', 'GET')
+    const stacks = await fetch(url, options).then((res) => res.json())
+
+    if (singleStack) {
+      const stack = stacks.find((stack: any) => stack.Name === singleStack)
+
+      if (!stack) {
+        this.error(`Stack ${singleStack} not found`)
+      }
+
+      await this.resetStack(stack.Id, stack.Name)
+    } else {
+      for (const stack of stacks) {
+        await this.resetStack(stack.Id, stack.Name)
+      }
     }
 
     this.exit()
