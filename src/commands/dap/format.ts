@@ -3,9 +3,12 @@ import * as os from 'node:os'
 import * as path from 'node:path'
 import * as readline from 'node:readline/promises'
 
-import {Args, Command} from '@oclif/core'
+import {Args} from '@oclif/core'
 import chalk from 'chalk'
 import {File as TagFile, Picture, PictureType} from 'node-taglib-sharp'
+
+import {ensureLibraryRoot, rebuildManifest} from '../../dap/library.js'
+import {DapBaseCommand} from './base.js'
 
 const AUDIO_EXTENSIONS = new Set(['.flac', '.mp3', '.wav', '.m4a', '.ogg', '.ape'])
 const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'])
@@ -79,6 +82,13 @@ function getTagDefaults(filePath: string): {albumArtist: string; album: string; 
 }
 
 type AudioFile = {relativePath: string; absolutePath: string}
+type PreparedAudioFile = {
+  absolutePath: string
+  disc: number
+  relativePath: string
+  title: string
+  track: number
+}
 
 /**
  * Collect audio files from sourceDir. Scans one level of subdirectories only.
@@ -137,7 +147,29 @@ function collectAudioFiles(sourceDir: string): AudioFile[] {
   return [...directFiles.sort((a, b) => a.relativePath.localeCompare(b.relativePath)), ...discFiles]
 }
 
-export default class DapFormat extends Command {
+function getSourceTrackInfo(filePath: string): {disc: number; title: string; track: number} {
+  const ext = path.extname(filePath).toLowerCase()
+  let disc = 1
+  let track = 0
+  let title = path.basename(filePath, ext)
+
+  try {
+    const tagFile = TagFile.createFromPath(filePath)
+    const {tag} = tagFile
+    disc = tag.disc || 1
+    track = tag.track || 0
+    title = tag.title || title
+    tagFile.dispose()
+  } catch {
+    // fall back to filename-derived defaults
+  }
+
+  return {disc, title, track}
+}
+
+export default class DapFormat extends DapBaseCommand {
+  static summary = 'Copy one album into the managed local DAP library with normalized filenames and tags'
+
   static args = {
     sourceDir: Args.string({
       description: 'Album directory to format and copy. Defaults to current working directory.',
@@ -146,17 +178,19 @@ export default class DapFormat extends Command {
   }
 
   static description =
-    'Copy and format an album directory to ~/Music/{Artist}/{Album}, renaming files to {disc}-{track} - {title}.{ext} and writing updated metadata'
+    'Use this when you have a single album folder on disk that needs to be prepared for your Echo Mini library.\n\nThe command leaves the source folder untouched, copies the audio files into ~/Music/DAP/{Artist}/{Album}, renames them into a consistent {disc}-{track} - {title}.{ext} format, writes album-level metadata, embeds album art when available, and refreshes the local DAP manifest.'
 
   static examples = [
-    `$ joeserver-tools dap-format /Volumes/Music/Some\\ Artist/Some\\ Album
+    `$ joeserver-tools dap format /Volumes/Music/Some\\ Artist/Some\\ Album
 ? Artist [Some Artist]:
 ? Album [Some Album]:
 ? Genre [Rock]:
 Album art: cover.jpg
-Copying 12 files to /Users/you/Music/Some Artist/Some Album...
+Copying 12 files to /Users/you/Music/DAP/Some Artist/Some Album...
   ✓ 1-01 - Opening Track.flac
   ...`,
+    `$ joeserver-tools dap format
+# Run from the current album directory and build/update the local DAP library copy`,
   ]
 
   async run(): Promise<void> {
@@ -183,8 +217,19 @@ Copying 12 files to /Users/you/Music/Some Artist/Some Album...
       this.error(`No audio files found in ${sourceDir}`)
     }
 
+    const preparedFiles: PreparedAudioFile[] = audioFiles
+      .map(({absolutePath, relativePath}) => {
+        const {disc, track, title} = getSourceTrackInfo(absolutePath)
+        return {absolutePath, disc, relativePath, title, track}
+      })
+      .sort((a, b) => {
+        if (a.disc !== b.disc) return a.disc - b.disc
+        if (a.track !== b.track) return a.track - b.track
+        return a.relativePath.localeCompare(b.relativePath)
+      })
+
     // Read tag defaults from the first file
-    const defaults = getTagDefaults(audioFiles[0].absolutePath)
+    const defaults = getTagDefaults(preparedFiles[0].absolutePath)
 
     // Interactive prompts
     const rl = readline.createInterface({input: process.stdin, output: process.stdout})
@@ -214,28 +259,14 @@ Copying 12 files to /Users/you/Music/Some Artist/Some Album...
     }
 
     // Build destination directory
-    const destDir = path.join(os.homedir(), 'Music', sanitizePathSegment(artist), sanitizePathSegment(album))
+    const destDir = path.join(this.localLibraryRoot, sanitizePathSegment(artist), sanitizePathSegment(album))
+    ensureLibraryRoot(this.localLibraryRoot)
     fs.mkdirSync(destDir, {recursive: true})
 
-    this.log(`\nCopying ${audioFiles.length} files to ${chalk.blue(destDir)}\n`)
+    this.log(`\nCopying ${preparedFiles.length} files to ${chalk.blue(destDir)}\n`)
 
-    for (const {absolutePath: srcPath} of audioFiles) {
+    for (const [index, {absolutePath: srcPath, disc, title, track}] of preparedFiles.entries()) {
       const ext = path.extname(srcPath).toLowerCase()
-
-      let disc = 1
-      let track = 0
-      let title = path.basename(srcPath, ext)
-
-      try {
-        const tagFile = TagFile.createFromPath(srcPath)
-        const {tag} = tagFile
-        disc = tag.disc || 1
-        track = tag.track || 0
-        title = tag.title || title
-        tagFile.dispose()
-      } catch {
-        // fall back to defaults already set
-      }
 
       const destFilename = buildFilename(disc, track, title, ext)
       const destPath = path.join(destDir, destFilename)
@@ -245,9 +276,13 @@ Copying 12 files to /Users/you/Music/Some Artist/Some Album...
       try {
         const tagFile = TagFile.createFromPath(destPath)
         const {tag} = tagFile
+        // Some DAPs appear to sort album tracks by `track` and ignore `disc`,
+        // so normalize copied-file metadata to one album-wide track sequence.
         tag.albumArtists = [artist]
         tag.performers = [artist]
         tag.album = album
+        tag.disc = 1
+        tag.track = index + 1
         if (genre) tag.genres = [genre]
         if (albumArtPath) {
           const pic = Picture.fromPath(albumArtPath)
@@ -264,6 +299,7 @@ Copying 12 files to /Users/you/Music/Some Artist/Some Album...
       this.log(`  ${chalk.green('✓')} ${destFilename}`)
     }
 
+    rebuildManifest(this.localLibraryRoot)
     this.log(`\n${chalk.green('Done.')}`)
   }
 }

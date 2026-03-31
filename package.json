@@ -9,7 +9,7 @@
   "dependencies": {
     "@oclif/core": "^4",
     "@oclif/plugin-help": "^6",
-    "@oclif/plugin-plugins": "^5.4.22",
+    "cli-progress": "^3.12.0",
     "node-taglib-sharp": "^6.0.1"
   },
   "description": "cli tools for managing joe's cool unraid server from the ubuntu vm",
@@ -27,8 +27,6 @@
     "dotenv": "^16.3.1",
     "eslint": "^9",
     "eslint-config-oclif": "^5",
-    "eslint-config-oclif-typescript": "^3",
-    "eslint-config-prettier": "^9.1.0",
     "js-yaml": "^4.1.0",
     "mocha": "^11",
     "node-ssh": "^13.1.0",
@@ -59,6 +57,15 @@
     "bin": "joeserver-tools",
     "commands": "./dist/commands",
     "dirname": "joeserver-tools",
+    "topicSeparator": " ",
+    "topics": {
+      "dap": {
+        "description": "Prepare albums for the managed local DAP library, inspect library state, compare against the Echo Mini device, and sync files to or from /TUNES."
+      },
+      "dap state": {
+        "description": "Rebuild and verify the portable manifest files that track what is present in the local and device DAP libraries."
+      }
+    },
     "plugins": [
       "@oclif/plugin-help",
       "@oclif/plugin-plugins"
@@ -67,7 +74,7 @@
   "repository": "josephfriesen/joeserver-tools",
   "scripts": {
     "build": "shx rm -rf dist && tsc -b",
-    "lint": "eslint . --ext .ts",
+    "lint": "tsc --noEmit",
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "npm run lint",
     "prepack": "npm run build && oclif manifest && oclif readme",

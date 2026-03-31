@@ -14,6 +14,7 @@ hello world! (./src/commands/hello/world.ts)
   static flags = {}
 
   async run(): Promise<void> {
+    await this.parse(World)
     this.log('hello world! (./src/commands/hello/world.ts)')
   }
 }

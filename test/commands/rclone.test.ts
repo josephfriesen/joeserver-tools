@@ -1,17 +1,9 @@
-import {expect, test} from '@oclif/test'
+import {expect} from 'chai'
+import {runCommand} from '@oclif/test'
 
-describe('backup', () => {
-  test
-  .stdout()
-  .command(['backup'])
-  .it('runs hello', ctx => {
-    expect(ctx.stdout).to.contain('hello world')
-  })
-
-  test
-  .stdout()
-  .command(['backup', '--name', 'jeff'])
-  .it('runs hello --name jeff', ctx => {
-    expect(ctx.stdout).to.contain('hello jeff')
+describe('rclone', () => {
+  it('loads the command module', async () => {
+    const ctx = await runCommand(['help', 'rclone'])
+    expect(ctx.stdout).to.contain('rclone')
   })
 })

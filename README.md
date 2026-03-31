@@ -1,380 +1,197 @@
-oclif-hello-world
-=================
+# joeserver-tools
 
-oclif example Hello World CLI
+Personal CLI utilities built with oclif. The main actively maintained feature set in this repo is the `dap` command group for managing music on an Echo Mini DAP audio player.
 
-[![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
-[![CircleCI](https://circleci.com/gh/oclif/hello-world/tree/main.svg?style=shield)](https://circleci.com/gh/oclif/hello-world/tree/main)
-[![GitHub license](https://img.shields.io/github/license/oclif/hello-world)](https://github.com/oclif/hello-world/blob/main/LICENSE)
+## What `dap` does
 
-<!-- toc -->
-* [Usage](#usage)
-* [Commands](#commands)
-<!-- tocstop -->
-# Usage
-<!-- usage -->
-```sh-session
-$ npm install -g joeserver-tools
-$ joeserver-tools COMMAND
-running command...
-$ joeserver-tools (--version)
-joeserver-tools/0.0.0 linux-x64 node-v21.5.0
-$ joeserver-tools --help [COMMAND]
-USAGE
-  $ joeserver-tools COMMAND
-...
-```
-<!-- usagestop -->
-# Commands
-<!-- commands -->
-* [`joeserver-tools hello PERSON`](#joeserver-tools-hello-person)
-* [`joeserver-tools hello world`](#joeserver-tools-hello-world)
-* [`joeserver-tools help [COMMANDS]`](#joeserver-tools-help-commands)
-* [`joeserver-tools plugins`](#joeserver-tools-plugins)
-* [`joeserver-tools plugins:install PLUGIN...`](#joeserver-tools-pluginsinstall-plugin)
-* [`joeserver-tools plugins:inspect PLUGIN...`](#joeserver-tools-pluginsinspect-plugin)
-* [`joeserver-tools plugins:install PLUGIN...`](#joeserver-tools-pluginsinstall-plugin-1)
-* [`joeserver-tools plugins:link PLUGIN`](#joeserver-tools-pluginslink-plugin)
-* [`joeserver-tools plugins:uninstall PLUGIN...`](#joeserver-tools-pluginsuninstall-plugin)
-* [`joeserver-tools plugins reset`](#joeserver-tools-plugins-reset)
-* [`joeserver-tools plugins:uninstall PLUGIN...`](#joeserver-tools-pluginsuninstall-plugin-1)
-* [`joeserver-tools plugins:uninstall PLUGIN...`](#joeserver-tools-pluginsuninstall-plugin-2)
-* [`joeserver-tools plugins update`](#joeserver-tools-plugins-update)
+The DAP workflow manages two libraries:
 
-## `joeserver-tools hello PERSON`
+- Local staged library: `~/Music/DAP`
+- Device library: `/TUNES` on the mounted Echo Mini
 
-Say hello
+The goal is to prepare albums locally, inspect library state, compare local vs device contents, sync changes safely, and keep a rebuildable manifest of what exists in each managed library.
 
-```
-USAGE
-  $ joeserver-tools hello PERSON -f <value>
+Safety rules:
 
-ARGUMENTS
-  PERSON  Person to say hello to
+- Device writes and deletions are scoped to `/TUNES`
+- Destructive commands require confirmation by default
+- `dap format` never modifies the source album folder
 
-FLAGS
-  -f, --from=<value>  (required) Who is saying hello
+## Requirements
 
-DESCRIPTION
-  Say hello
+- Node.js `>=18`
+- A desktop OS supported by Node.js
+- For device operations, the Echo Mini mounted and visible to the system
 
-EXAMPLES
-  $ oex hello friend --from oclif
-  hello friend from oclif! (./src/commands/hello/index.ts)
+## Install
+
+Install dependencies:
+
+```bash
+npm install
 ```
 
-_See code: [src/commands/hello/index.ts](https://github.com/josephfriesen/joeserver-tools/blob/v0.0.0/src/commands/hello/index.ts)_
+Build the CLI:
 
-## `joeserver-tools hello world`
-
-Say hello world
-
-```
-USAGE
-  $ joeserver-tools hello world
-
-DESCRIPTION
-  Say hello world
-
-EXAMPLES
-  $ joeserver-tools hello world
-  hello world! (./src/commands/hello/world.ts)
+```bash
+npm run build
 ```
 
-_See code: [src/commands/hello/world.ts](https://github.com/josephfriesen/joeserver-tools/blob/v0.0.0/src/commands/hello/world.ts)_
+Run tests:
 
-## `joeserver-tools help [COMMANDS]`
-
-Display help for joeserver-tools.
-
-```
-USAGE
-  $ joeserver-tools help [COMMANDS] [-n]
-
-ARGUMENTS
-  COMMANDS  Command to show help for.
-
-FLAGS
-  -n, --nested-commands  Include all nested commands in the output.
-
-DESCRIPTION
-  Display help for joeserver-tools.
+```bash
+npm test
 ```
 
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.0.11/src/commands/help.ts)_
+## Development usage
 
-## `joeserver-tools plugins`
+From the repo root, run commands directly from source with:
 
-List installed plugins.
-
-```
-USAGE
-  $ joeserver-tools plugins [--json] [--core]
-
-FLAGS
-  --core  Show core plugins.
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  List installed plugins.
-
-EXAMPLES
-  $ joeserver-tools plugins
+```bash
+./bin/dev.js dap
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v4.1.14/src/commands/plugins/index.ts)_
+or:
 
-## `joeserver-tools plugins:install PLUGIN...`
-
-Installs a plugin into the CLI.
-
-```
-USAGE
-  $ joeserver-tools plugins add plugins:install PLUGIN...
-
-ARGUMENTS
-  PLUGIN  Plugin to install.
-
-FLAGS
-  -f, --force    Run yarn install with force flag.
-  -h, --help     Show CLI help.
-  -s, --silent   Silences yarn output.
-  -v, --verbose  Show verbose yarn output.
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Installs a plugin into the CLI.
-  Can be installed from npm or a git url.
-
-  Installation of a user-installed plugin will override a core plugin.
-
-  e.g. If you have a core plugin that has a 'hello' command, installing a user-installed plugin with a 'hello' command
-  will override the core plugin implementation. This is useful if a user needs to update core plugin functionality in
-  the CLI without the need to patch and update the whole CLI.
-
-
-ALIASES
-  $ joeserver-tools plugins add
-
-EXAMPLES
-  $ joeserver-tools plugins add myplugin 
-
-  $ joeserver-tools plugins add https://github.com/someuser/someplugin
-
-  $ joeserver-tools plugins add someuser/someplugin
+```bash
+npm run js-dev -- dap
 ```
 
-## `joeserver-tools plugins:inspect PLUGIN...`
+If you want the CLI name available directly in your shell during development:
 
-Displays installation properties of a plugin.
-
-```
-USAGE
-  $ joeserver-tools plugins inspect PLUGIN...
-
-ARGUMENTS
-  PLUGIN  [default: .] Plugin to inspect.
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Displays installation properties of a plugin.
-
-EXAMPLES
-  $ joeserver-tools plugins inspect myplugin
+```bash
+npm link
+joeserver-tools dap
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v4.1.14/src/commands/plugins/inspect.ts)_
+## DAP workflow
 
-## `joeserver-tools plugins:install PLUGIN...`
+Typical usage looks like:
 
-Installs a plugin into the CLI.
+1. Format an album into the managed local library.
+2. Inspect local and device state.
+3. Preview a sync plan.
+4. Apply the sync after confirmation.
+5. Eject the device when finished.
 
-```
-USAGE
-  $ joeserver-tools plugins install PLUGIN...
+Example:
 
-ARGUMENTS
-  PLUGIN  Plugin to install.
-
-FLAGS
-  -f, --force    Run yarn install with force flag.
-  -h, --help     Show CLI help.
-  -s, --silent   Silences yarn output.
-  -v, --verbose  Show verbose yarn output.
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Installs a plugin into the CLI.
-  Can be installed from npm or a git url.
-
-  Installation of a user-installed plugin will override a core plugin.
-
-  e.g. If you have a core plugin that has a 'hello' command, installing a user-installed plugin with a 'hello' command
-  will override the core plugin implementation. This is useful if a user needs to update core plugin functionality in
-  the CLI without the need to patch and update the whole CLI.
-
-
-ALIASES
-  $ joeserver-tools plugins add
-
-EXAMPLES
-  $ joeserver-tools plugins install myplugin 
-
-  $ joeserver-tools plugins install https://github.com/someuser/someplugin
-
-  $ joeserver-tools plugins install someuser/someplugin
+```bash
+./bin/dev.js dap format /path/to/album
+./bin/dev.js dap info
+./bin/dev.js dap sync --direction=local-to-device --dry-run
+./bin/dev.js dap sync --direction=local-to-device
+./bin/dev.js dap eject
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v4.1.14/src/commands/plugins/install.ts)_
+## DAP commands
 
-## `joeserver-tools plugins:link PLUGIN`
+### `dap`
 
-Links a plugin into the CLI for development.
+Show the DAP workflow overview and the available subcommands.
 
-```
-USAGE
-  $ joeserver-tools plugins link PLUGIN
-
-ARGUMENTS
-  PATH  [default: .] path to plugin
-
-FLAGS
-  -h, --help          Show CLI help.
-  -v, --verbose
-      --[no-]install  Install dependencies after linking the plugin.
-
-DESCRIPTION
-  Links a plugin into the CLI for development.
-  Installation of a linked plugin will override a user-installed or core plugin.
-
-  e.g. If you have a user-installed or core plugin that has a 'hello' command, installing a linked plugin with a 'hello'
-  command will override the user-installed or core plugin implementation. This is useful for development work.
-
-
-EXAMPLES
-  $ joeserver-tools plugins link myplugin
+```bash
+./bin/dev.js dap
+./bin/dev.js dap --help
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v4.1.14/src/commands/plugins/link.ts)_
+### `dap format [sourceDir]`
 
-## `joeserver-tools plugins:uninstall PLUGIN...`
+Copy a single album into `~/Music/DAP/{Artist}/{Album}` with normalized filenames, rewritten album-level metadata, and embedded album art when available. The source folder is left untouched.
 
-Removes a plugin from the CLI.
-
-```
-USAGE
-  $ joeserver-tools plugins remove plugins:uninstall PLUGIN...
-
-ARGUMENTS
-  PLUGIN  plugin to uninstall
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ joeserver-tools plugins unlink
-  $ joeserver-tools plugins remove
-
-EXAMPLES
-  $ joeserver-tools plugins remove myplugin
+```bash
+./bin/dev.js dap format /path/to/album
+./bin/dev.js dap format
 ```
 
-## `joeserver-tools plugins reset`
+### `dap remove [targetPath]`
 
-Remove all user-installed and linked plugins.
+Remove one staged album from the managed local library. You can point it at either the staged album path inside `~/Music/DAP` or the original source album folder. The command shows the resolved album, song count, and disk usage before deleting it and rebuilding local state.
 
-```
-USAGE
-  $ joeserver-tools plugins reset
-```
-
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v4.1.14/src/commands/plugins/reset.ts)_
-
-## `joeserver-tools plugins:uninstall PLUGIN...`
-
-Removes a plugin from the CLI.
-
-```
-USAGE
-  $ joeserver-tools plugins uninstall PLUGIN...
-
-ARGUMENTS
-  PLUGIN  plugin to uninstall
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ joeserver-tools plugins unlink
-  $ joeserver-tools plugins remove
-
-EXAMPLES
-  $ joeserver-tools plugins uninstall myplugin
+```bash
+./bin/dev.js dap remove /path/to/album
+./bin/dev.js dap remove ~/Music/DAP/Artist/Album
+./bin/dev.js dap remove
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v4.1.14/src/commands/plugins/uninstall.ts)_
+### `dap info [--diff]`
 
-## `joeserver-tools plugins:uninstall PLUGIN...`
+Show local and device library totals, manifest freshness, song/capacity limits, and optionally file-level differences.
 
-Removes a plugin from the CLI.
-
-```
-USAGE
-  $ joeserver-tools plugins unlink plugins:uninstall PLUGIN...
-
-ARGUMENTS
-  PLUGIN  plugin to uninstall
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ joeserver-tools plugins unlink
-  $ joeserver-tools plugins remove
-
-EXAMPLES
-  $ joeserver-tools plugins unlink myplugin
+```bash
+./bin/dev.js dap info
+./bin/dev.js dap info --diff
 ```
 
-## `joeserver-tools plugins update`
+### `dap sync --direction=local-to-device|device-to-local [--mode=copy|exact] [--dry-run] [--confirm]`
 
-Update installed plugins.
+Build and print a sync plan between `~/Music/DAP` and `/TUNES`.
 
+Modes:
+
+- `copy`: copy/update files, never delete destination-only files
+- `exact`: make the destination match the source exactly within the managed library root
+
+Behavior:
+
+- prints the sync plan first
+- uses `--dry-run` for preview only
+- asks for confirmation before applying unless `--confirm` is passed
+
+```bash
+./bin/dev.js dap sync --direction=local-to-device --dry-run
+./bin/dev.js dap sync --direction=local-to-device
+./bin/dev.js dap sync --direction=local-to-device --mode=exact
+./bin/dev.js dap sync --direction=device-to-local --confirm
 ```
-USAGE
-  $ joeserver-tools plugins update [-h] [-v]
 
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
+### `dap clear --target=local|device`
 
-DESCRIPTION
-  Update installed plugins.
+Destructively reset the local managed library or the device `/TUNES` library back to zero files and rebuild an empty manifest.
+
+```bash
+./bin/dev.js dap clear --target=local
+./bin/dev.js dap clear --target=device
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v4.1.14/src/commands/plugins/update.ts)_
-<!-- commandsstop -->
+### `dap eject`
+
+Safely unmount/eject the connected Echo Mini after transfers are complete.
+
+```bash
+./bin/dev.js dap eject
+./bin/dev.js dap eject --confirm
+```
+
+### `dap state`
+
+Show information about the portable manifest files used by the DAP commands.
+
+```bash
+./bin/dev.js dap state
+```
+
+### `dap state rebuild --target=local|device|both [--hash]`
+
+Rebuild `.dap-state.json` from the actual files on disk. Use this when state is missing, stale, or you intentionally changed files out of band.
+
+```bash
+./bin/dev.js dap state rebuild --target=local
+./bin/dev.js dap state rebuild --target=device
+./bin/dev.js dap state rebuild --target=both --hash
+```
+
+## Manifest files
+
+Each managed library root stores a portable JSON manifest:
+
+- Local: `~/Music/DAP/.dap-state.json`
+- Device: `/TUNES/.dap-state.json`
+
+These manifests are snapshots of the current library contents, not per-computer sync history. They can always be rebuilt from the files on disk.
+
+## Notes
+
+- On macOS, filesystem sidecar files such as `._*` are ignored by the DAP library scanner.
+- Device playback quirks can depend on metadata as well as filenames, so `dap format` rewrites tags intentionally for DAP-friendly ordering.
+- This repo still contains some older non-DAP commands from the initial scaffold, but the DAP workflow is the primary area being developed.
