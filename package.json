@@ -9,7 +9,8 @@
   "dependencies": {
     "@oclif/core": "^4",
     "@oclif/plugin-help": "^6",
-    "@oclif/plugin-plugins": "^5.4.22"
+    "@oclif/plugin-plugins": "^5.4.22",
+    "node-taglib-sharp": "^6.0.1"
   },
   "description": "cli tools for managing joe's cool unraid server from the ubuntu vm",
   "devDependencies": {
